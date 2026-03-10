@@ -29,25 +29,40 @@ const typeColors: any = {
 export default function PokemonPage() {
 
   const [pokemonList, setPokemonList] = useState<Pokemon[]>([])
-  const [search, setSearch] = useState("")
+  const [search, setSearch] = useState<string>("")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
 
-    async function loadPokemon() {
+  async function loadPokemon() {
 
-      const res = await fetch("/api/pokemon")
-      const data = await res.json()
+    const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=151")
+    const data = await res.json()
 
-      // API ของเราส่ง array มาเลย
-      setPokemonList(data)
-      setLoading(false)
+    const pokemonData = await Promise.all(
+      data.results.map(async (p: any) => {
 
-    }
+        const detail = await fetch(p.url)
+        const detailData = await detail.json()
 
-    loadPokemon()
+        return {
+          id: detailData.id,
+          name: detailData.name,
+          image: detailData.sprites.front_default,
+          type: detailData.types[0].type.name
+        }
 
-  }, [])
+      })
+    )
+
+    setPokemonList(pokemonData)
+    setLoading(false)
+
+  }
+
+  loadPokemon()
+
+}, [])
 
   const filtered = pokemonList.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())
